@@ -5,6 +5,8 @@ beside its current value and, optionally, the current value of a second entity.
 A typical use is an outdoor tile: temperature history plus current temperature
 and humidity.
 
+![Outdoor temperature history with current temperature and humidity](screenshots/lg.png)
+
 ## What it does
 
 - Reads current states and the primary entity's history through the shared
