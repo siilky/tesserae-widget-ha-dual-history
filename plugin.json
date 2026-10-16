@@ -1,0 +1,136 @@
+{
+  "tesserae_compat": "1.x",
+  "name": "Home Assistant, Dual History",
+  "version": "0.2.0",
+  "kind": "widget",
+  "description": "A Home Assistant entity's history graph (6 hours to 7 days) beside its current value and an optional second entity's value, with configurable labels, icons, number formats, graph width and value position.",
+  "icon": "ph-chart-line-up",
+  "supports": { "sizes": ["xs", "sm", "md", "lg"] },
+  "cell_options": [
+    { "name": "title", "type": "string", "label": "Title (blank = primary entity name)", "default": "" },
+    {
+      "name": "title_scale", "type": "slider", "label": "Title size", "default": 1.0,
+      "min": 0.5, "max": 3.0, "step": 0.05, "unit": "×",
+      "help": "Scales the title bar together with its icon."
+    },
+    { "name": "primary_entity", "type": "select", "label": "Primary entity (value + history graph)", "default": "", "choices_from": "entity" },
+    { "name": "primary_label", "type": "string", "label": "Primary label (blank = automatic)", "default": "" },
+    { "name": "show_primary_label", "type": "boolean", "label": "Show primary label", "default": true },
+    {
+      "name": "primary_format", "type": "string", "label": "Primary number format", "default": "0.0", "placeholder": "0.0",
+      "help": "Decimal places of a numeric value: 0 for whole numbers, 0.0 for one decimal, 0.00 for two. Anything else shows one decimal."
+    },
+    {
+      "name": "primary_icon", "type": "select", "label": "Primary icon", "default": "auto",
+      "choices": [
+        { "value": "auto", "label": "Auto" },
+        { "value": "none", "label": "None" },
+        { "value": "thermometer", "label": "Thermometer" },
+        { "value": "drop", "label": "Drop" },
+        { "value": "battery-medium", "label": "Battery" },
+        { "value": "lightning", "label": "Lightning" },
+        { "value": "gauge", "label": "Gauge" },
+        { "value": "house", "label": "House" },
+        { "value": "chart-line", "label": "Chart" },
+        { "value": "wind", "label": "Wind" },
+        { "value": "sun", "label": "Sun" },
+        { "value": "cloud", "label": "Cloud" },
+        { "value": "wifi-high", "label": "Signal" },
+        { "value": "flame", "label": "Flame" }
+      ]
+    },
+    { "name": "secondary_entity", "type": "select", "label": "Secondary entity (optional current value)", "default": "", "choices_from": "entity" },
+    { "name": "secondary_label", "type": "string", "label": "Secondary label (blank = automatic)", "default": "" },
+    { "name": "show_secondary_label", "type": "boolean", "label": "Show secondary label", "default": true },
+    {
+      "name": "secondary_format", "type": "string", "label": "Secondary number format", "default": "0.0", "placeholder": "0.0",
+      "help": "Decimal places of a numeric value: 0 for whole numbers, 0.0 for one decimal, 0.00 for two. Anything else shows one decimal."
+    },
+    {
+      "name": "secondary_icon", "type": "select", "label": "Secondary icon", "default": "auto",
+      "choices": [
+        { "value": "auto", "label": "Auto" },
+        { "value": "none", "label": "None" },
+        { "value": "thermometer", "label": "Thermometer" },
+        { "value": "drop", "label": "Drop" },
+        { "value": "battery-medium", "label": "Battery" },
+        { "value": "lightning", "label": "Lightning" },
+        { "value": "gauge", "label": "Gauge" },
+        { "value": "house", "label": "House" },
+        { "value": "chart-line", "label": "Chart" },
+        { "value": "wind", "label": "Wind" },
+        { "value": "sun", "label": "Sun" },
+        { "value": "cloud", "label": "Cloud" },
+        { "value": "wifi-high", "label": "Signal" },
+        { "value": "flame", "label": "Flame" }
+      ]
+    },
+    {
+      "name": "values_position", "type": "select", "label": "Values position (wide sizes)", "default": "right",
+      "choices": [
+        { "value": "right", "label": "Right" },
+        { "value": "left", "label": "Left" }
+      ]
+    },
+    {
+      "name": "chart_width", "type": "slider", "label": "Graph size", "default": 65,
+      "min": 40, "max": 80, "step": 1, "unit": "%",
+      "help": "Share of the body given to the graph: its width in wide sizes, its height in compact sizes where it sits above the values."
+    },
+    {
+      "name": "window", "type": "select", "label": "History window", "default": "24",
+      "choices": [
+        { "value": "6", "label": "6 hours" },
+        { "value": "12", "label": "12 hours" },
+        { "value": "24", "label": "24 hours" },
+        { "value": "48", "label": "2 days" },
+        { "value": "72", "label": "3 days" },
+        { "value": "168", "label": "7 days" }
+      ]
+    },
+    {
+      "name": "minimum_y_span", "type": "number", "label": "Minimum Y-axis span (primary sensor units)", "default": 5,
+      "help": "Expands a narrow graph range without clipping values. For humidity, 10 is a useful starting point."
+    }
+  ],
+  "data_schema": {
+    "fields": [
+      { "name": "title", "type": "str", "label": "Title" },
+      { "name": "primary_value", "type": "str", "label": "Primary value" },
+      { "name": "primary_unit", "type": "str", "label": "Primary unit" },
+      { "name": "secondary_value", "type": "str", "label": "Secondary value" },
+      { "name": "secondary_unit", "type": "str", "label": "Secondary unit" },
+      { "name": "history_values", "type": "arr", "label": "Primary history" }
+    ],
+    "sample": {
+      "title": "Outside",
+      "values_position": "right",
+      "chart_width": 65,
+      "minimum_y_span": 5,
+      "history_hours": 24,
+      "primary_value": "7.8",
+      "primary_unit": "°C",
+      "primary_label": "Temperature",
+      "primary_label_key": "label.temperature",
+      "primary_icon": "thermometer",
+      "secondary_value": "82.0",
+      "secondary_unit": "%",
+      "secondary_label": "Humidity",
+      "secondary_label_key": "label.humidity",
+      "secondary_icon": "drop",
+      "history_values": [5.2, 4.9, 5.6, 6.4, 7.1, 7.8],
+      "history_times": [
+        1788112800000,
+        1788127200000,
+        1788141600000,
+        1788156000000,
+        1788170400000,
+        1788184800000
+      ],
+      "chart_error_key": "",
+      "chart_error": ""
+    }
+  },
+  "render": { "dither": "none", "needs_network": true },
+  "locales": ["en", "ru", "uk"]
+}
