@@ -59,7 +59,7 @@ function metricMarkup(data, prefix, ctx, locale) {
     ? ""
     : `<i class="metric-icon ph-bold ph-${escapeHtml(icon)}" aria-hidden="true"></i>`;
   return `
-    <div class="metric" data-value="${prefix}">
+    <div class="metric" data-value="${prefix}"${data.chart_series === prefix ? "" : " data-off-chart"}>
       ${iconMarkup}
       <div class="metric-copy">
         <div class="metric-value"><span>${value}</span>${unit ? `<small>${unit}</small>` : ""}</div>
@@ -316,7 +316,6 @@ const styles = `
       min-width: 0;
       min-height: 0;
       padding: var(--space-1);
-      background: var(--surface-sunken);
     }
     .chart-region canvas {
       display: block;
@@ -343,7 +342,8 @@ const styles = `
     /* fitMetricValues() overrides --value-size; the icon follows it, or the
        shared --icon-value-size once both values are fitted. */
     .metric { --value-size: clamp(var(--fs-value), 12cqmin, var(--fs-jumbo)); }
-    .metric:nth-child(2) { background: var(--surface-sunken); }
+    /* The value the chart does not plot is set back. */
+    .metric[data-off-chart] { background: var(--surface-sunken); }
     .metric[data-icon-side] { grid-template-columns: auto minmax(0, 1fr); }
     /* Above its value the icon keeps the text's left edge. */
     .metric-icon {
@@ -455,9 +455,11 @@ export default function render(shadow, ctx) {
   // CSS zoom scales the host's zoom-locked title bar as one unit: icon, text,
   // min-height and rule. A blank or invalid value leaves it at 1.
   const titleScale = Number(ctx.cell.options.title_scale) || 1;
-  const mount = (icon, title, body) => {
+  // A tap anywhere on the card reaches server.py's chart action: Tesserae
+  // collects data-on-tap regions from the rendered frame, shadow roots included.
+  const mount = (icon, title, body, tap = "") => {
     shadow.innerHTML = `${styles}
-    <div class="w dual-history" data-widget="ha_dual_history" data-size="${ctx.cell.size}">
+    <div class="w dual-history" data-widget="ha_dual_history" data-size="${ctx.cell.size}"${tap ? ` data-on-tap="${escapeHtml(tap)}"` : ""}>
       <div class="w-title" style="zoom: ${titleScale}">
         <i class="ph-bold ${icon}" aria-hidden="true"></i>
         <h3>${escapeHtml(title)}</h3>
@@ -502,7 +504,7 @@ export default function render(shadow, ctx) {
           ${metricMarkup(data, "primary", ctx, locale)}
           ${data.secondary_value ? metricMarkup(data, "secondary", ctx, locale) : ""}
         </div>
-      </div>`);
+      </div>`, data.chart_tap);
 
   const canvas = shadow.querySelector("canvas");
   if (canvas) drawHistory(canvas, tokens(shadow.host), data, ctx, locale);

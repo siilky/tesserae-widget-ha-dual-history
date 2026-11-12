@@ -9,8 +9,11 @@ and humidity.
 
 ## What it does
 
-- Reads current states and the primary entity's history through the shared
+- Reads current states and the graphed entity's history through the shared
   Home Assistant Core plugin (`ha_core`); the widget makes no requests of its own.
+- On a touch panel a tap on the card switches the graph between the primary and
+  the secondary entity; the value not on the graph is set back. The choice is
+  kept in memory per entity pair, so a Tesserae restart shows the primary again.
 - History window from 6 hours to 7 days, drawn on a real time axis with
   local-hour ticks (weekdays for 3 and 7 days).
 - Labels, icons and units follow the entity's `device_class` unless set
@@ -32,12 +35,12 @@ This widget adds no settings of its own.
 | --- | --- |
 | Title, Title size | blank = the primary entity's name; 0.5–3× |
 | Primary entity | the entity whose history is drawn and whose value is shown |
-| Secondary entity | optional; only its current value is shown |
+| Secondary entity | optional; its current value is shown, a tap graphs its history |
 | Label, Show label, Number format, Icon | per value; blank label and `Auto` icon follow `device_class`; format `0`, `0.0`, `0.00` |
 | Values position | `right` or `left` (wide sizes) |
 | Graph size | 40–80 % of the body |
 | History window | 6, 12, 24 hours, 2, 3 or 7 days |
-| Minimum Y-axis span | widens a flat graph without clipping values |
+| Minimum Y-axis span | per entity; widens a flat graph without clipping values |
 
 ## Locales
 

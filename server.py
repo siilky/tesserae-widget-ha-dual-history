@@ -1,4 +1,4 @@
-"""One or two current Home Assistant values plus the primary entity's history."""
+"""One or two current Home Assistant values plus the history of one of them."""
 
 from __future__ import annotations
 
@@ -8,6 +8,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from flask import current_app
+
+try:
+    from app import button_actions
+except ImportError:  # loaded outside the Tesserae host, as by the unit tests
+    button_actions = None
 
 
 _EM_DASH = "—"
@@ -74,11 +79,37 @@ _MAX_HISTORY_POINTS = 80
 _WINDOW_HOURS = {6, 12, 24, 48, 72, 168}
 # The number-pattern vocabulary of the bundled ha_sensor and ha_history widgets.
 _NUMBER_FORMAT = re.compile(r"0(?:\.(0+))?")
+# The tap action the card carries while it has two values. Its argument is the
+# "primary|secondary" entity pair: the touch dispatcher passes the action
+# nothing about the tapped cell, so the pair is what both the action and
+# fetch() can name the chart by.
+_CHART_ACTION = "ha_dual_history_chart"
+# Entity pairs whose chart a tap has switched to the secondary history.
+# ponytail: in-memory and keyed by the pair, so a Tesserae restart shows the
+# primary again and cells with the same pair switch together; persist it in
+# data_dir or key it per cell if either matters.
+_SECONDARY_CHARTS: set[str] = set()
 
 
 def _core() -> Any:
     plugin = current_app.config["PLUGIN_REGISTRY"].get("ha_core")
     return plugin.server_module if plugin is not None else None
+
+
+def _switch_chart(ctx: Any, pair: str | None) -> Any:
+    """Flips the pair's chart between its two series and re-renders the page,
+    like the host's own "refresh", so the same wake shows the other chart."""
+    _SECONDARY_CHARTS.symmetric_difference_update({pair or ""})
+    return button_actions.ActionResult(
+        new_step_index=ctx.current_step_index,
+        target_page_id=None,
+        force_refresh=True,
+        description=f"{_CHART_ACTION} -> {pair}",
+    )
+
+
+if button_actions is not None:
+    button_actions.register(_CHART_ACTION, _switch_chart)
 
 
 def choices(name: str) -> list[dict[str, str]]:
@@ -238,7 +269,13 @@ def fetch(
     )
     title = title or primary["entity_name"]
     position = "left" if options.get("values_position") == "left" else "right"
-    minimum_y_span = _finite_float(options.get("minimum_y_span"))
+    # Without a secondary there is nothing to switch to, so the card gets no
+    # tap action and its pair can never be switched.
+    pair = f"{primary_id}|{secondary_id}"
+    series = "secondary" if pair in _SECONDARY_CHARTS else "primary"
+    # The primary's span keeps its original option name.
+    span_option = "minimum_y_span" if series == "primary" else "secondary_minimum_y_span"
+    minimum_y_span = _finite_float(options.get(span_option))
     if minimum_y_span is None or minimum_y_span <= 0:
         minimum_y_span = 5.0
     hours = _select_int(options.get("window"), _WINDOW_HOURS, 24)
@@ -252,6 +289,8 @@ def fetch(
         "chart_width": chart_width,
         "minimum_y_span": minimum_y_span,
         "history_hours": hours,
+        "chart_series": series,
+        "chart_tap": f"{_CHART_ACTION}:{pair}" if secondary_id else "",
         "history_values": [],
         "history_times": [],
         "chart_error_key": "",
@@ -265,7 +304,9 @@ def fetch(
     # History is a separate failure domain: an HA history timeout must not
     # erase two current states that were already fetched successfully.
     try:
-        samples = core.history(primary_id, hours=hours)
+        samples = core.history(
+            secondary_id if series == "secondary" else primary_id, hours=hours
+        )
         output["history_values"], output["history_times"] = _history_series(samples)
     except Exception as error:
         output["chart_error_key"] = "chart.history_error"

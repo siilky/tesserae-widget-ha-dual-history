@@ -1,9 +1,9 @@
 {
   "tesserae_compat": "1.x",
   "name": "Home Assistant, Dual History",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "widget",
-  "description": "A Home Assistant entity's history graph (6 hours to 7 days) beside its current value and an optional second entity's value, with configurable labels, icons, number formats, graph width and value position.",
+  "description": "A Home Assistant entity's history graph (6 hours to 7 days) beside its current value and an optional second entity's value; a tap on a touch panel switches the graph to the other entity. Configurable labels, icons, number formats, graph width and value position.",
   "icon": "ph-chart-line-up",
   "supports": { "sizes": ["xs", "sm", "md", "lg"] },
   "cell_options": [
@@ -39,7 +39,7 @@
         { "value": "flame", "label": "Flame" }
       ]
     },
-    { "name": "secondary_entity", "type": "select", "label": "Secondary entity (optional current value)", "default": "", "choices_from": "entity" },
+    { "name": "secondary_entity", "type": "select", "label": "Secondary entity (optional; a tap shows its graph)", "default": "", "choices_from": "entity" },
     { "name": "secondary_label", "type": "string", "label": "Secondary label (blank = automatic)", "default": "" },
     { "name": "show_secondary_label", "type": "boolean", "label": "Show secondary label", "default": true },
     {
@@ -91,6 +91,10 @@
     {
       "name": "minimum_y_span", "type": "number", "label": "Minimum Y-axis span (primary sensor units)", "default": 5,
       "help": "Expands a narrow graph range without clipping values. For humidity, 10 is a useful starting point."
+    },
+    {
+      "name": "secondary_minimum_y_span", "type": "number", "label": "Secondary minimum Y-axis span (secondary sensor units)", "default": 5,
+      "help": "The same for the secondary's graph, shown after a tap on a touch panel."
     }
   ],
   "data_schema": {
@@ -100,7 +104,7 @@
       { "name": "primary_unit", "type": "str", "label": "Primary unit" },
       { "name": "secondary_value", "type": "str", "label": "Secondary value" },
       { "name": "secondary_unit", "type": "str", "label": "Secondary unit" },
-      { "name": "history_values", "type": "arr", "label": "Primary history" }
+      { "name": "history_values", "type": "arr", "label": "Graph history" }
     ],
     "sample": {
       "title": "Outside",
@@ -108,6 +112,8 @@
       "chart_width": 65,
       "minimum_y_span": 5,
       "history_hours": 24,
+      "chart_series": "primary",
+      "chart_tap": "ha_dual_history_chart:sensor.outdoor_temperature|sensor.outdoor_humidity",
       "primary_value": "7.8",
       "primary_unit": "°C",
       "primary_label": "Temperature",

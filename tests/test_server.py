@@ -388,6 +388,45 @@ class ServerContractTest(unittest.TestCase):
         self.assertEqual(output["history_values"][-1], 160.0)
         self.assertEqual(len(output["history_times"]), 80)
 
+    def tap(self, spec: str) -> Any:
+        """Dispatch a card's tap action the way the host's registry would."""
+        name, _, arg = spec.partition(":")
+        self.assertEqual(name, SERVER._CHART_ACTION)
+        return SERVER._switch_chart(SimpleNamespace(current_step_index=2), arg)
+
+    def test_tap_switches_the_chart_between_the_two_entities(self) -> None:
+        actions = SimpleNamespace(ActionResult=lambda **fields: fields)
+        for name, value in (("_SECONDARY_CHARTS", set()), ("button_actions", actions)):
+            patcher = mock.patch.object(SERVER, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        options = self.base_options() | {"minimum_y_span": "4", "secondary_minimum_y_span": "12"}
+
+        output = self.fetch(options)
+        self.assertEqual(output["chart_series"], "primary")
+        self.assertEqual(output["minimum_y_span"], 4.0)
+        self.assertEqual(self.core.history_calls[-1][0], "sensor.outdoor_temperature")
+
+        result = self.tap(output["chart_tap"])
+        self.assertTrue(result["force_refresh"])
+        self.assertEqual(result["new_step_index"], 2)
+        output = self.fetch(options)
+        self.assertEqual(output["chart_series"], "secondary")
+        self.assertEqual(output["minimum_y_span"], 12.0)
+        self.assertEqual(self.core.history_calls[-1][0], "sensor.outdoor_humidity")
+        self.assertEqual(self.fetch(options | {"secondary_minimum_y_span": ""})["minimum_y_span"], 5.0)
+
+        # Another pair keeps its own chart; a second tap returns to the primary.
+        other = self.fetch({"primary_entity": "sensor.outdoor_humidity", "secondary_entity": "sensor.outdoor_temperature"})
+        self.assertEqual(other["chart_series"], "primary")
+        self.tap(output["chart_tap"])
+        self.assertEqual(self.fetch(options)["chart_series"], "primary")
+
+    def test_a_lone_primary_offers_no_tap(self) -> None:
+        output = self.fetch({"primary_entity": "sensor.outdoor_temperature"})
+        self.assertEqual(output["chart_tap"], "")
+        self.assertEqual(output["chart_series"], "primary")
+
 
 if __name__ == "__main__":
     unittest.main()
